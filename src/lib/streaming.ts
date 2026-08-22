@@ -39,7 +39,10 @@ export function daysLeft(iso: string | null): number | null {
 
 export function formatDate(iso: string | null): string {
   if (!iso) return "—";
-  const [y, m, d] = iso.split("-");
+  const parts = iso.split("-");
+  const y = parts[0] ?? "";
+  const m = parts[1] ?? "";
+  const d = parts[2] ?? "";
   return `${d}/${m}/${y.slice(2)}`;
 }
 
