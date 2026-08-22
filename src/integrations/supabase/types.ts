@@ -14,7 +14,137 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      accounts: {
+        Row: {
+          change_date: string | null
+          created_at: string
+          created_by: string
+          email: string | null
+          expires_at: string | null
+          id: string
+          label: string
+          max_profiles: number
+          notes: string | null
+          password: string | null
+          platform: string
+          updated_at: string
+        }
+        Insert: {
+          change_date?: string | null
+          created_at?: string
+          created_by: string
+          email?: string | null
+          expires_at?: string | null
+          id?: string
+          label: string
+          max_profiles?: number
+          notes?: string | null
+          password?: string | null
+          platform?: string
+          updated_at?: string
+        }
+        Update: {
+          change_date?: string | null
+          created_at?: string
+          created_by?: string
+          email?: string | null
+          expires_at?: string | null
+          id?: string
+          label?: string
+          max_profiles?: number
+          notes?: string | null
+          password?: string | null
+          platform?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      clients: {
+        Row: {
+          account_id: string
+          created_at: string
+          created_by: string
+          days: number
+          expires_at: string
+          id: string
+          is_extra: boolean
+          name: string
+          notes: string | null
+          paid: boolean
+          phone: string | null
+          price: number | null
+          sale_date: string
+          updated_at: string
+          vendor: string | null
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          created_by: string
+          days?: number
+          expires_at: string
+          id?: string
+          is_extra?: boolean
+          name: string
+          notes?: string | null
+          paid?: boolean
+          phone?: string | null
+          price?: number | null
+          sale_date?: string
+          updated_at?: string
+          vendor?: string | null
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          created_by?: string
+          days?: number
+          expires_at?: string
+          id?: string
+          is_extra?: boolean
+          name?: string
+          notes?: string | null
+          paid?: boolean
+          phone?: string | null
+          price?: number | null
+          sale_date?: string
+          updated_at?: string
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
