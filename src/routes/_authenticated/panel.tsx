@@ -76,6 +76,8 @@ export const Route = createFileRoute("/_authenticated/panel")({
   component: Panel,
 });
 
+const MAX_EXTRAS = 2;
+
 const statusStyles: Record<Status, string> = {
   activo: "bg-success/15 text-success border-success/30",
   "por-vencer": "bg-warning/15 text-warning border-warning/30",
