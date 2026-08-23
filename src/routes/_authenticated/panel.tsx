@@ -15,6 +15,7 @@ import {
   Pencil,
   Plus,
   RefreshCw,
+  Search,
   Send,
   Trash2,
   Tv,
@@ -43,6 +44,7 @@ import { AccountDialog } from "@/components/AccountDialog";
 import { ClientDialog } from "@/components/ClientDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -76,6 +78,8 @@ export const Route = createFileRoute("/_authenticated/panel")({
   component: Panel,
 });
 
+const MAX_EXTRAS = 2;
+
 const statusStyles: Record<Status, string> = {
   activo: "bg-success/15 text-success border-success/30",
   "por-vencer": "bg-warning/15 text-warning border-warning/30",
@@ -97,6 +101,7 @@ function Panel() {
   const navigate = useNavigate();
   const qc = useQueryClient();
 
+  const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [accountDialog, setAccountDialog] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
@@ -249,11 +254,36 @@ function Panel() {
   };
 
   const newClient = (accountId: string, extra: boolean) => {
+    const account = accountList.find((a) => a.id === accountId);
+    const own = clientList.filter((c) => c.account_id === accountId);
+    const normales = own.filter((c) => !c.is_extra).length;
+    const extras = own.filter((c) => c.is_extra).length;
+    const maxNormales = account?.max_profiles ?? 5;
+
+    if (!extra && normales >= maxNormales) {
+      toast.error(`Cuenta llena: ${normales}/${maxNormales} usuarios normales`, {
+        description: "No puedes ingresar más clientes normales. Regístralo mejor como usuario extra.",
+      });
+      return;
+    }
+    if (extra && extras >= MAX_EXTRAS) {
+      toast.error("Superaste el límite de usuarios", {
+        description: `Esta cuenta ya tiene ${normales}/${maxNormales} normales y ${extras}/${MAX_EXTRAS} extras. Usa otra cuenta.`,
+      });
+      return;
+    }
+
     setEditingClient(null);
     setClientAccountId(accountId);
     setClientExtra(extra);
     setClientDialog(true);
   };
+
+  const q = search.trim().toLowerCase();
+  const searchResults = useMemo(
+    () => (q ? clientList.filter((c) => c.name.toLowerCase().includes(q) || (c.phone ?? "").includes(q)) : []),
+    [clientList, q],
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -276,6 +306,74 @@ function Panel() {
       </header>
 
       <main className="mx-auto max-w-6xl space-y-6 px-4 py-6">
+        <section className="space-y-3">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar cliente por nombre o WhatsApp…"
+              className="pl-9"
+              aria-label="Buscar clientes"
+            />
+          </div>
+
+          {q && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                {searchResults.length} resultado(s) para “{search.trim()}”
+              </p>
+              {searchResults.length === 0 ? (
+                <EmptyState title="Sin resultados" description="Revisa el nombre o prueba con otra palabra." />
+              ) : (
+                searchResults.map((c) => {
+                  const account = accountList.find((a) => a.id === c.account_id);
+                  return (
+                    <Card key={c.id} className="border-border/60">
+                      <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="truncate font-semibold">{c.name}</p>
+                            <StatusBadge iso={c.expires_at} />
+                            {c.is_extra && <Badge variant="outline">Extra</Badge>}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {account ? `${account.platform} · ${account.label}` : "Cuenta eliminada"} · vence{" "}
+                            {formatDate(c.expires_at)}
+                            {c.vendor ? ` · ${c.vendor}` : ""}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button size="sm" onClick={() => openWhatsapp(c)}>
+                            <MessageCircle className="size-4" />
+                            WhatsApp
+                          </Button>
+                          <Button size="sm" variant="secondary" onClick={() => renew.mutate(c)}>
+                            <RefreshCw className="size-4" />
+                            Renovar
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            aria-label="Editar"
+                            onClick={() => {
+                              setEditingClient(c);
+                              setClientAccountId(c.account_id);
+                              setClientDialog(true);
+                            }}
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
+            </div>
+          )}
+        </section>
+
         <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <StatCard icon={<Users className="size-4" />} label="Clientes" value={String(clientList.length)} />
           <StatCard
