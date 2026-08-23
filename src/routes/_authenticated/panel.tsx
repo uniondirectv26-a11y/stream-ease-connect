@@ -15,6 +15,7 @@ import {
   Pencil,
   Plus,
   RefreshCw,
+  Search,
   Send,
   Trash2,
   Tv,
