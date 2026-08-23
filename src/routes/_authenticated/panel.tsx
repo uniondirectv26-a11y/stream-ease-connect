@@ -224,6 +224,24 @@ function Panel() {
     );
   };
 
+  const copyAccountText = async (account: Account) => {
+    const text = buildAccountShareText(account);
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Datos copiados", { description: "Pégalos en WhatsApp" });
+    } catch {
+      toast.error("No se pudo copiar", { description: text });
+    }
+  };
+
+  const shareAccountText = (account: Account) => {
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(buildAccountShareText(account))}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     qc.clear();
