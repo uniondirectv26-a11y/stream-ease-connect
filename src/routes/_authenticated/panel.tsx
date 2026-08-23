@@ -304,6 +304,74 @@ function Panel() {
       </header>
 
       <main className="mx-auto max-w-6xl space-y-6 px-4 py-6">
+        <section className="space-y-3">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar cliente por nombre o WhatsApp…"
+              className="pl-9"
+              aria-label="Buscar clientes"
+            />
+          </div>
+
+          {q && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                {searchResults.length} resultado(s) para “{search.trim()}”
+              </p>
+              {searchResults.length === 0 ? (
+                <EmptyState title="Sin resultados" description="Revisa el nombre o prueba con otra palabra." />
+              ) : (
+                searchResults.map((c) => {
+                  const account = accountList.find((a) => a.id === c.account_id);
+                  return (
+                    <Card key={c.id} className="border-border/60">
+                      <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="truncate font-semibold">{c.name}</p>
+                            <StatusBadge iso={c.expires_at} />
+                            {c.is_extra && <Badge variant="outline">Extra</Badge>}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {account ? `${account.platform} · ${account.label}` : "Cuenta eliminada"} · vence{" "}
+                            {formatDate(c.expires_at)}
+                            {c.vendor ? ` · ${c.vendor}` : ""}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button size="sm" onClick={() => openWhatsapp(c)}>
+                            <MessageCircle className="size-4" />
+                            WhatsApp
+                          </Button>
+                          <Button size="sm" variant="secondary" onClick={() => renew.mutate(c)}>
+                            <RefreshCw className="size-4" />
+                            Renovar
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            aria-label="Editar"
+                            onClick={() => {
+                              setEditingClient(c);
+                              setClientAccountId(c.account_id);
+                              setClientDialog(true);
+                            }}
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
+            </div>
+          )}
+        </section>
+
         <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <StatCard icon={<Users className="size-4" />} label="Clientes" value={String(clientList.length)} />
           <StatCard
