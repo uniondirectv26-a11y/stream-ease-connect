@@ -97,6 +97,7 @@ function Panel() {
   const navigate = useNavigate();
   const qc = useQueryClient();
 
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [accountDialog, setAccountDialog] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [clientDialog, setClientDialog] = useState(false);
