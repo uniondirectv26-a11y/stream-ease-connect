@@ -4,7 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   CalendarClock,
+  ChevronDown,
+  ChevronUp,
   CircleCheck,
+  Copy,
   KeyRound,
   LogOut,
   Mail,
@@ -12,6 +15,7 @@ import {
   Pencil,
   Plus,
   RefreshCw,
+  Send,
   Trash2,
   Tv,
   Users,
@@ -22,6 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   STATUS_LABEL,
   addDaysISO,
+  buildAccountShareText,
   buildWhatsappMessage,
   daysLeft,
   formatDate,
@@ -33,6 +38,7 @@ import {
   type Client,
   type Status,
 } from "@/lib/streaming";
+
 import { AccountDialog } from "@/components/AccountDialog";
 import { ClientDialog } from "@/components/ClientDialog";
 import { Button } from "@/components/ui/button";
