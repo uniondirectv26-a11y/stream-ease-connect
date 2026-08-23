@@ -250,11 +250,36 @@ function Panel() {
   };
 
   const newClient = (accountId: string, extra: boolean) => {
+    const account = accountList.find((a) => a.id === accountId);
+    const own = clientList.filter((c) => c.account_id === accountId);
+    const normales = own.filter((c) => !c.is_extra).length;
+    const extras = own.filter((c) => c.is_extra).length;
+    const maxNormales = account?.max_profiles ?? 5;
+
+    if (!extra && normales >= maxNormales) {
+      toast.error(`Cuenta llena: ${normales}/${maxNormales} usuarios normales`, {
+        description: "No puedes ingresar más clientes normales. Regístralo mejor como usuario extra.",
+      });
+      return;
+    }
+    if (extra && extras >= MAX_EXTRAS) {
+      toast.error("Superaste el límite de usuarios", {
+        description: `Esta cuenta ya tiene ${normales}/${maxNormales} normales y ${extras}/${MAX_EXTRAS} extras. Usa otra cuenta.`,
+      });
+      return;
+    }
+
     setEditingClient(null);
     setClientAccountId(accountId);
     setClientExtra(extra);
     setClientDialog(true);
   };
+
+  const q = search.trim().toLowerCase();
+  const searchResults = useMemo(
+    () => (q ? clientList.filter((c) => c.name.toLowerCase().includes(q) || (c.phone ?? "").includes(q)) : []),
+    [clientList, q],
+  );
 
   return (
     <div className="min-h-screen bg-background">
