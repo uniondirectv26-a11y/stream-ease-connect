@@ -4,7 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   CalendarClock,
+  ChevronDown,
+  ChevronUp,
   CircleCheck,
+  Copy,
   KeyRound,
   LogOut,
   Mail,
@@ -12,6 +15,7 @@ import {
   Pencil,
   Plus,
   RefreshCw,
+  Send,
   Trash2,
   Tv,
   Users,
@@ -22,6 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   STATUS_LABEL,
   addDaysISO,
+  buildAccountShareText,
   buildWhatsappMessage,
   daysLeft,
   formatDate,
@@ -33,6 +38,7 @@ import {
   type Client,
   type Status,
 } from "@/lib/streaming";
+
 import { AccountDialog } from "@/components/AccountDialog";
 import { ClientDialog } from "@/components/ClientDialog";
 import { Button } from "@/components/ui/button";
@@ -91,6 +97,7 @@ function Panel() {
   const navigate = useNavigate();
   const qc = useQueryClient();
 
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [accountDialog, setAccountDialog] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [clientDialog, setClientDialog] = useState(false);
@@ -212,6 +219,24 @@ function Panel() {
     const message = buildWhatsappMessage(client, account);
     window.open(
       `https://wa.me/${normalizePhone(client.phone)}?text=${encodeURIComponent(message)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
+
+  const copyAccountText = async (account: Account) => {
+    const text = buildAccountShareText(account);
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Datos copiados", { description: "Pégalos en WhatsApp" });
+    } catch {
+      toast.error("No se pudo copiar", { description: text });
+    }
+  };
+
+  const shareAccountText = (account: Account) => {
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(buildAccountShareText(account))}`,
       "_blank",
       "noopener,noreferrer",
     );
@@ -351,6 +376,7 @@ function Panel() {
                 const own = clientList.filter((c) => c.account_id === account.id);
                 const normales = own.filter((c) => !c.is_extra);
                 const extras = own.filter((c) => c.is_extra);
+                const isCollapsed = collapsed[account.id] ?? true;
                 return (
                   <Card key={account.id} className="overflow-hidden border-border/60">
                     <CardHeader className="gap-3 border-b border-border/60 bg-secondary/30">
@@ -383,6 +409,24 @@ function Panel() {
                           <Button
                             size="icon"
                             variant="ghost"
+                            aria-label="Copiar datos de la cuenta"
+                            title="Copiar datos"
+                            onClick={() => copyAccountText(account)}
+                          >
+                            <Copy className="size-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            aria-label="Enviar datos por WhatsApp"
+                            title="Enviar por WhatsApp"
+                            onClick={() => shareAccountText(account)}
+                          >
+                            <Send className="size-4 text-success" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
                             aria-label="Editar cuenta"
                             onClick={() => {
                               setEditingAccount(account);
@@ -401,9 +445,27 @@ function Panel() {
                           </Button>
                         </div>
                       </div>
+
+                      <pre className="whitespace-pre-wrap rounded-md bg-background/60 p-3 text-xs text-foreground/90">
+                        {buildAccountShareText(account)}
+                      </pre>
+
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="self-start"
+                        onClick={() => setCollapsed((s) => ({ ...s, [account.id]: !isCollapsed }))}
+                      >
+                        {isCollapsed ? <ChevronDown className="size-4" /> : <ChevronUp className="size-4" />}
+                        {isCollapsed
+                          ? `Ver clientes (${own.length})`
+                          : `Ocultar clientes (${own.length})`}
+                      </Button>
                     </CardHeader>
 
+                    {!isCollapsed && (
                     <CardContent className="space-y-4 p-4">
+
                       <ClientGroup
                         title="Usuarios"
                         clients={normales}
@@ -431,6 +493,7 @@ function Panel() {
                         onRenew={(c) => renew.mutate(c)}
                       />
                     </CardContent>
+                    )}
                   </Card>
                 );
               })

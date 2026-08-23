@@ -104,3 +104,28 @@ export function buildWhatsappMessage(client: Client, account: Account | undefine
 export function whatsappUrl(phone: string | null, message: string): string {
   return `https://wa.me/${normalizePhone(phone)}?text=${encodeURIComponent(message)}`;
 }
+
+const PLATFORM_EMOJI: Record<string, string> = {
+  Netflix: "🔴",
+  "Disney+": "🔵",
+  Max: "🟣",
+  "Prime Video": "🔷",
+  Spotify: "🟢",
+  "Paramount+": "🔹",
+  Vix: "🟡",
+  Crunchyroll: "🟠",
+  "YouTube Premium": "🔺",
+  Otro: "⚪",
+};
+
+/** Texto listo para copiar/enviar por WhatsApp con los datos de la cuenta. */
+export function buildAccountShareText(account: Account, client?: Client | null): string {
+  const emoji = PLATFORM_EMOJI[account.platform] ?? "⚪";
+  const lines = [`*${emoji}${account.platform} servicio*`];
+  if (account.email) lines.push(`✉️${account.email}`);
+  if (account.password) lines.push(`🔑${account.password}`);
+  lines.push(`🖥️${client?.name ? ` ${client.name}` : ""}`);
+  lines.push("");
+  lines.push("👆");
+  return lines.join("\n");
+}
