@@ -108,6 +108,9 @@ function Panel() {
   const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [accountDialog, setAccountDialog] = useState(false);
+  const [expenseDialog, setExpenseDialog] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [deleteExpense, setDeleteExpense] = useState<Expense | null>(null);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [clientDialog, setClientDialog] = useState(false);
   const [clientAccountId, setClientAccountId] = useState<string>("");
