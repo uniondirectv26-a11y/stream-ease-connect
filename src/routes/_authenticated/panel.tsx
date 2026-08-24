@@ -37,11 +37,13 @@ import {
   todayISO,
   type Account,
   type Client,
+  type Expense,
   type Status,
 } from "@/lib/streaming";
 
 import { AccountDialog } from "@/components/AccountDialog";
 import { ClientDialog } from "@/components/ClientDialog";
+import { ExpenseDialog } from "@/components/ExpenseDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
