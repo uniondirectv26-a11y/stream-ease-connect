@@ -20,6 +20,8 @@ import {
   Trash2,
   Tv,
   Users,
+  Wallet,
+  TrendingDown,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -37,11 +39,13 @@ import {
   todayISO,
   type Account,
   type Client,
+  type Expense,
   type Status,
 } from "@/lib/streaming";
 
 import { AccountDialog } from "@/components/AccountDialog";
 import { ClientDialog } from "@/components/ClientDialog";
+import { ExpenseDialog } from "@/components/ExpenseDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -104,6 +108,9 @@ function Panel() {
   const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [accountDialog, setAccountDialog] = useState(false);
+  const [expenseDialog, setExpenseDialog] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [deleteExpense, setDeleteExpense] = useState<Expense | null>(null);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [clientDialog, setClientDialog] = useState(false);
   const [clientAccountId, setClientAccountId] = useState<string>("");
@@ -144,8 +151,18 @@ function Panel() {
     },
   });
 
+  const expenses = useQuery({
+    queryKey: ["expenses"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("expenses").select("*").order("spent_on", { ascending: false });
+      if (error) throw error;
+      return data as Expense[];
+    },
+  });
+
   const accountList = accounts.data ?? [];
   const clientList = clients.data ?? [];
+  const expenseList = expenses.data ?? [];
 
   const stats = useMemo(() => {
     let porVencer = 0;
@@ -160,8 +177,12 @@ function Panel() {
       if (!c.paid) pendientes += 1;
       if (c.sale_date.slice(0, 7) === month) ingresos += Number(c.price ?? 0);
     }
-    return { porVencer, vencidos, pendientes, ingresos };
-  }, [clientList]);
+    let invertido = 0;
+    for (const e of expenseList) {
+      if (e.spent_on.slice(0, 7) === month) invertido += Number(e.amount ?? 0);
+    }
+    return { porVencer, vencidos, pendientes, ingresos, invertido, neto: ingresos - invertido };
+  }, [clientList, expenseList]);
 
   const alerts = useMemo(
     () =>
@@ -211,6 +232,18 @@ function Panel() {
       qc.invalidateQueries({ queryKey: ["accounts"] });
       qc.invalidateQueries({ queryKey: ["clients"] });
       toast.success("Cuenta eliminada");
+    },
+    onError: (e: Error) => toast.error("No se pudo eliminar", { description: e.message }),
+  });
+
+  const removeExpense = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("expenses").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["expenses"] });
+      toast.success("Inversión eliminada");
     },
     onError: (e: Error) => toast.error("No se pudo eliminar", { description: e.message }),
   });
@@ -374,7 +407,7 @@ function Panel() {
           )}
         </section>
 
-        <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <section className="grid grid-cols-2 gap-3 lg:grid-cols-3">
           <StatCard icon={<Users className="size-4" />} label="Clientes" value={String(clientList.length)} />
           <StatCard
             icon={<CalendarClock className="size-4" />}
@@ -394,6 +427,18 @@ function Panel() {
             value={money(stats.ingresos)}
             tone="text-primary"
           />
+          <StatCard
+            icon={<TrendingDown className="size-4" />}
+            label="Invertido del mes"
+            value={money(stats.invertido)}
+            tone="text-warning"
+          />
+          <StatCard
+            icon={<Wallet className="size-4" />}
+            label="Ganancia neta del mes"
+            value={money(stats.neto)}
+            tone={stats.neto < 0 ? "text-destructive" : "text-success"}
+          />
         </section>
 
         <Tabs defaultValue="alertas">
@@ -404,7 +449,92 @@ function Panel() {
             <TabsTrigger value="cuentas" className="flex-1 sm:flex-none">
               Cuentas
             </TabsTrigger>
+            <TabsTrigger value="finanzas" className="flex-1 sm:flex-none">
+              Inversiones
+            </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="finanzas" className="mt-4 space-y-3">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <StatCard
+                icon={<CircleCheck className="size-4" />}
+                label="Ventas del mes"
+                value={money(stats.ingresos)}
+                tone="text-primary"
+              />
+              <StatCard
+                icon={<TrendingDown className="size-4" />}
+                label="Inversión del mes"
+                value={money(stats.invertido)}
+                tone="text-warning"
+              />
+              <StatCard
+                icon={<Wallet className="size-4" />}
+                label="Queda (ventas - inversión)"
+                value={money(stats.neto)}
+                tone={stats.neto < 0 ? "text-destructive" : "text-success"}
+              />
+            </div>
+
+            <div className="flex justify-end">
+              <Button
+                onClick={() => {
+                  setEditingExpense(null);
+                  setExpenseDialog(true);
+                }}
+              >
+                <Plus className="size-4" />
+                Nueva inversión
+              </Button>
+            </div>
+
+            {expenseList.length === 0 ? (
+              <EmptyState
+                title="Sin inversiones registradas"
+                description="Registra el dinero que gastas al renovar o comprar cuentas para ver tu ganancia real."
+              />
+            ) : (
+              expenseList.map((e) => {
+                const account = accountList.find((a) => a.id === e.account_id);
+                return (
+                  <Card key={e.id} className="border-border/60">
+                    <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0 space-y-1">
+                        <p className="truncate font-semibold">{e.concept}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDate(e.spent_on)}
+                          {account ? ` · ${account.platform} · ${account.label}` : ""}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-warning">-{money(Number(e.amount))}</p>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label="Editar inversión"
+                          onClick={() => {
+                            setEditingExpense(e);
+                            setExpenseDialog(true);
+                          }}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label="Eliminar inversión"
+                          onClick={() => setDeleteExpense(e)}
+                        >
+                          <Trash2 className="size-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+          </TabsContent>
+
 
           <TabsContent value="alertas" className="mt-4 space-y-3">
             {alerts.length === 0 ? (
@@ -608,6 +738,35 @@ function Panel() {
       </main>
 
       <AccountDialog open={accountDialog} onOpenChange={setAccountDialog} account={editingAccount} />
+      <ExpenseDialog
+        open={expenseDialog}
+        onOpenChange={setExpenseDialog}
+        expense={editingExpense}
+        accounts={accountList}
+      />
+
+      <AlertDialog open={!!deleteExpense} onOpenChange={(o) => !o && setDeleteExpense(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar esta inversión?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteExpense ? `${deleteExpense.concept} · ${money(Number(deleteExpense.amount))}` : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteExpense) removeExpense.mutate(deleteExpense.id);
+                setDeleteExpense(null);
+              }}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {clientAccountId && (
         <ClientDialog
           open={clientDialog}

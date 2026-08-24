@@ -2,6 +2,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 export type Account = Database["public"]["Tables"]["accounts"]["Row"];
 export type Client = Database["public"]["Tables"]["clients"]["Row"];
+export type Expense = Database["public"]["Tables"]["expenses"]["Row"];
 
 export const PLATFORMS = [
   "Netflix",
