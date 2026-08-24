@@ -148,8 +148,18 @@ function Panel() {
     },
   });
 
+  const expenses = useQuery({
+    queryKey: ["expenses"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("expenses").select("*").order("spent_on", { ascending: false });
+      if (error) throw error;
+      return data as Expense[];
+    },
+  });
+
   const accountList = accounts.data ?? [];
   const clientList = clients.data ?? [];
+  const expenseList = expenses.data ?? [];
 
   const stats = useMemo(() => {
     let porVencer = 0;
@@ -164,8 +174,12 @@ function Panel() {
       if (!c.paid) pendientes += 1;
       if (c.sale_date.slice(0, 7) === month) ingresos += Number(c.price ?? 0);
     }
-    return { porVencer, vencidos, pendientes, ingresos };
-  }, [clientList]);
+    let invertido = 0;
+    for (const e of expenseList) {
+      if (e.spent_on.slice(0, 7) === month) invertido += Number(e.amount ?? 0);
+    }
+    return { porVencer, vencidos, pendientes, ingresos, invertido, neto: ingresos - invertido };
+  }, [clientList, expenseList]);
 
   const alerts = useMemo(
     () =>
