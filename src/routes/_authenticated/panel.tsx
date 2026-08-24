@@ -458,12 +458,22 @@ function Panel() {
             <TabsTrigger value="finanzas" className="flex-1 sm:flex-none">
               Inversiones
             </TabsTrigger>
+            <TabsTrigger value="usuarios" className="flex-1 sm:flex-none">
+              Usuarios
+            </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="usuarios" className="mt-4 space-y-3">
+            {profile.data && (
+              <TeamPanel currentUserId={profile.data.id} isAdmin={profile.data.role === "admin"} />
+            )}
+          </TabsContent>
 
           <TabsContent value="finanzas" className="mt-4 space-y-3">
             <div className="grid gap-3 sm:grid-cols-3">
               <StatCard
                 icon={<CircleCheck className="size-4" />}
+
                 label="Ventas del mes"
                 value={money(stats.ingresos)}
                 tone="text-primary"
