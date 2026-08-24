@@ -407,7 +407,7 @@ function Panel() {
           )}
         </section>
 
-        <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <section className="grid grid-cols-2 gap-3 lg:grid-cols-3">
           <StatCard icon={<Users className="size-4" />} label="Clientes" value={String(clientList.length)} />
           <StatCard
             icon={<CalendarClock className="size-4" />}
