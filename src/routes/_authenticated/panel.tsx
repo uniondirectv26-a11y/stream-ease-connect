@@ -51,6 +51,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TeamPanel } from "@/components/TeamPanel";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -125,9 +126,15 @@ function Panel() {
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user) return null;
       const { data } = await supabase.from("profiles").select("*").eq("id", auth.user.id).maybeSingle();
-      return { email: auth.user.email ?? "", name: data?.full_name || auth.user.email || "Vendedor" };
+      return {
+        id: auth.user.id,
+        email: auth.user.email ?? "",
+        name: data?.full_name || auth.user.email || "Vendedor",
+        role: (data?.role ?? "member") as "admin" | "member",
+      };
     },
   });
+
 
   const accounts = useQuery({
     queryKey: ["accounts"],
@@ -452,12 +459,22 @@ function Panel() {
             <TabsTrigger value="finanzas" className="flex-1 sm:flex-none">
               Inversiones
             </TabsTrigger>
+            <TabsTrigger value="usuarios" className="flex-1 sm:flex-none">
+              Usuarios
+            </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="usuarios" className="mt-4 space-y-3">
+            {profile.data && (
+              <TeamPanel currentUserId={profile.data.id} isAdmin={profile.data.role === "admin"} />
+            )}
+          </TabsContent>
 
           <TabsContent value="finanzas" className="mt-4 space-y-3">
             <div className="grid gap-3 sm:grid-cols-3">
               <StatCard
                 icon={<CircleCheck className="size-4" />}
+
                 label="Ventas del mes"
                 value={money(stats.ingresos)}
                 tone="text-primary"

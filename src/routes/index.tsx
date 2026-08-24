@@ -80,7 +80,14 @@ function AuthPage() {
     });
     setLoading(false);
     if (error) {
-      toast.error("No pudimos crear la cuenta", { description: error.message });
+      const limite =
+        /l[ií]mite alcanzado/i.test(error.message) ||
+        /database error saving new user/i.test(error.message) ||
+        /unexpected_failure/i.test(error.message);
+      toast.error(
+        limite ? "Límite alcanzado: esta aplicación permite máximo 5 usuarios." : "No pudimos crear la cuenta",
+        limite ? undefined : { description: error.message },
+      );
       return;
     }
     if (!data.session) {

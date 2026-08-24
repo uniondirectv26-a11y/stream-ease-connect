@@ -60,7 +60,7 @@ export function AccountDialog({ open, onOpenChange, account }: Props) {
         password: password.trim() || null,
         expires_at: expiresAt || null,
         change_date: changeDate || null,
-        max_profiles: Number(maxProfiles) || 5,
+        max_profiles: Math.min(Math.max(Number(maxProfiles) || 5, 1), 5),
         notes: notes.trim() || null,
         created_by: userId,
       };
@@ -157,16 +157,17 @@ export function AccountDialog({ open, onOpenChange, account }: Props) {
               <Input id="acc-change" type="date" value={changeDate} onChange={(e) => setChangeDate(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="acc-max">Cupos</Label>
+              <Label htmlFor="acc-max">Cupos (máx. 5)</Label>
               <Input
                 id="acc-max"
                 type="number"
                 min={1}
-                max={20}
+                max={5}
                 value={maxProfiles}
                 onChange={(e) => setMaxProfiles(e.target.value)}
               />
             </div>
+
           </div>
 
           <div className="space-y-2">
