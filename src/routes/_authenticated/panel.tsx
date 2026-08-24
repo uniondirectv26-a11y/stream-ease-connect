@@ -738,6 +738,35 @@ function Panel() {
       </main>
 
       <AccountDialog open={accountDialog} onOpenChange={setAccountDialog} account={editingAccount} />
+      <ExpenseDialog
+        open={expenseDialog}
+        onOpenChange={setExpenseDialog}
+        expense={editingExpense}
+        accounts={accountList}
+      />
+
+      <AlertDialog open={!!deleteExpense} onOpenChange={(o) => !o && setDeleteExpense(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar esta inversión?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteExpense ? `${deleteExpense.concept} · ${money(Number(deleteExpense.amount))}` : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteExpense) removeExpense.mutate(deleteExpense.id);
+                setDeleteExpense(null);
+              }}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {clientAccountId && (
         <ClientDialog
           open={clientDialog}
