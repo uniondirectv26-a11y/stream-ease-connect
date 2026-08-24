@@ -20,6 +20,8 @@ import {
   Trash2,
   Tv,
   Users,
+  Wallet,
+  TrendingDown,
 } from "lucide-react";
 import { toast } from "sonner";
 
