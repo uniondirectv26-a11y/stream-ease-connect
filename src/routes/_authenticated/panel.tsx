@@ -125,9 +125,15 @@ function Panel() {
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user) return null;
       const { data } = await supabase.from("profiles").select("*").eq("id", auth.user.id).maybeSingle();
-      return { email: auth.user.email ?? "", name: data?.full_name || auth.user.email || "Vendedor" };
+      return {
+        id: auth.user.id,
+        email: auth.user.email ?? "",
+        name: data?.full_name || auth.user.email || "Vendedor",
+        role: (data?.role ?? "member") as "admin" | "member",
+      };
     },
   });
+
 
   const accounts = useQuery({
     queryKey: ["accounts"],
