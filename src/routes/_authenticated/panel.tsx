@@ -236,6 +236,18 @@ function Panel() {
     onError: (e: Error) => toast.error("No se pudo eliminar", { description: e.message }),
   });
 
+  const removeExpense = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("expenses").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["expenses"] });
+      toast.success("Inversión eliminada");
+    },
+    onError: (e: Error) => toast.error("No se pudo eliminar", { description: e.message }),
+  });
+
   const openWhatsapp = (client: Client) => {
     if (!normalizePhone(client.phone)) {
       toast.error("Este cliente no tiene número de WhatsApp");
