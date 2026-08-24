@@ -566,6 +566,9 @@ function Panel() {
 
                       <ClientGroup
                         title="Usuarios"
+                        used={normales.length}
+                        max={account.max_profiles}
+                        fullHint="Cuenta llena. Registra los siguientes como usuarios extras."
                         clients={normales}
                         onAdd={() => newClient(account.id, false)}
                         onEdit={(c) => {
@@ -579,6 +582,9 @@ function Panel() {
                       />
                       <ClientGroup
                         title="Usuarios extras"
+                        used={extras.length}
+                        max={MAX_EXTRAS}
+                        fullHint="Superaste el límite de usuarios de esta cuenta. Usa otra cuenta."
                         clients={extras}
                         onAdd={() => newClient(account.id, true)}
                         onEdit={(c) => {
@@ -590,6 +596,7 @@ function Panel() {
                         onWhatsapp={openWhatsapp}
                         onRenew={(c) => renew.mutate(c)}
                       />
+
                     </CardContent>
                     )}
                   </Card>
