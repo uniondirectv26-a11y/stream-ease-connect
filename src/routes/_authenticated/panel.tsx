@@ -701,6 +701,9 @@ function EmptyState({ title, description }: { title: string; description: string
 
 function ClientGroup({
   title,
+  used,
+  max,
+  fullHint,
   clients,
   onAdd,
   onEdit,
@@ -709,6 +712,9 @@ function ClientGroup({
   onRenew,
 }: {
   title: string;
+  used: number;
+  max: number;
+  fullHint: string;
   clients: Client[];
   onAdd: () => void;
   onEdit: (c: Client) => void;
@@ -716,15 +722,28 @@ function ClientGroup({
   onWhatsapp: (c: Client) => void;
   onRenew: (c: Client) => void;
 }) {
+  const full = used >= max;
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</p>
-        <Button size="sm" variant="ghost" onClick={onAdd}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {title}{" "}
+          <span className={full ? "text-destructive" : "text-muted-foreground"}>
+            ({used}/{max})
+          </span>
+        </p>
+        <Button size="sm" variant="ghost" onClick={onAdd} disabled={full}>
           <Plus className="size-4" />
           Agregar
         </Button>
       </div>
+
+      {full && (
+        <p className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+          {fullHint}
+        </p>
+      )}
+
 
       {clients.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border/60 p-3 text-xs text-muted-foreground">
