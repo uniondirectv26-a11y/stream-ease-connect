@@ -427,6 +427,18 @@ function Panel() {
             value={money(stats.ingresos)}
             tone="text-primary"
           />
+          <StatCard
+            icon={<TrendingDown className="size-4" />}
+            label="Invertido del mes"
+            value={money(stats.invertido)}
+            tone="text-warning"
+          />
+          <StatCard
+            icon={<Wallet className="size-4" />}
+            label="Ganancia neta del mes"
+            value={money(stats.neto)}
+            tone={stats.neto < 0 ? "text-destructive" : "text-success"}
+          />
         </section>
 
         <Tabs defaultValue="alertas">
@@ -437,7 +449,92 @@ function Panel() {
             <TabsTrigger value="cuentas" className="flex-1 sm:flex-none">
               Cuentas
             </TabsTrigger>
+            <TabsTrigger value="finanzas" className="flex-1 sm:flex-none">
+              Inversiones
+            </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="finanzas" className="mt-4 space-y-3">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <StatCard
+                icon={<CircleCheck className="size-4" />}
+                label="Ventas del mes"
+                value={money(stats.ingresos)}
+                tone="text-primary"
+              />
+              <StatCard
+                icon={<TrendingDown className="size-4" />}
+                label="Inversión del mes"
+                value={money(stats.invertido)}
+                tone="text-warning"
+              />
+              <StatCard
+                icon={<Wallet className="size-4" />}
+                label="Queda (ventas - inversión)"
+                value={money(stats.neto)}
+                tone={stats.neto < 0 ? "text-destructive" : "text-success"}
+              />
+            </div>
+
+            <div className="flex justify-end">
+              <Button
+                onClick={() => {
+                  setEditingExpense(null);
+                  setExpenseDialog(true);
+                }}
+              >
+                <Plus className="size-4" />
+                Nueva inversión
+              </Button>
+            </div>
+
+            {expenseList.length === 0 ? (
+              <EmptyState
+                title="Sin inversiones registradas"
+                description="Registra el dinero que gastas al renovar o comprar cuentas para ver tu ganancia real."
+              />
+            ) : (
+              expenseList.map((e) => {
+                const account = accountList.find((a) => a.id === e.account_id);
+                return (
+                  <Card key={e.id} className="border-border/60">
+                    <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0 space-y-1">
+                        <p className="truncate font-semibold">{e.concept}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDate(e.spent_on)}
+                          {account ? ` · ${account.platform} · ${account.label}` : ""}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-warning">-{money(Number(e.amount))}</p>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label="Editar inversión"
+                          onClick={() => {
+                            setEditingExpense(e);
+                            setExpenseDialog(true);
+                          }}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label="Eliminar inversión"
+                          onClick={() => setDeleteExpense(e)}
+                        >
+                          <Trash2 className="size-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+          </TabsContent>
+
 
           <TabsContent value="alertas" className="mt-4 space-y-3">
             {alerts.length === 0 ? (
