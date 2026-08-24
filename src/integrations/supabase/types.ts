@@ -121,6 +121,50 @@ export type Database = {
           },
         ]
       }
+      expenses: {
+        Row: {
+          account_id: string | null
+          amount: number
+          concept: string
+          created_at: string
+          created_by: string
+          id: string
+          notes: string | null
+          spent_on: string
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount?: number
+          concept?: string
+          created_at?: string
+          created_by: string
+          id?: string
+          notes?: string | null
+          spent_on?: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          concept?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          notes?: string | null
+          spent_on?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
