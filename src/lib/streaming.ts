@@ -138,7 +138,7 @@ export function profileLabelOf(client: Client, index?: number): string {
 export function buildAccountShareText(
   account: Account,
   client?: Client | null,
-  options?: { profileIndex?: number },
+  options?: { profileIndex?: number | undefined },
 ): string {
   const lines = [`*${platformEmoji(account.platform)} ${account.platform} servicio*`];
   if (account.email) lines.push(`✉️ ${account.email}`);
