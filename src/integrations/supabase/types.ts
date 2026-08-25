@@ -59,6 +59,63 @@ export type Database = {
         }
         Relationships: []
       }
+      client_renewals: {
+        Row: {
+          account_id: string | null
+          client_id: string
+          created_at: string
+          created_by: string
+          days: number
+          id: string
+          new_expires_at: string
+          notes: string | null
+          previous_expires_at: string | null
+          price: number | null
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          client_id: string
+          created_at?: string
+          created_by: string
+          days?: number
+          id?: string
+          new_expires_at: string
+          notes?: string | null
+          previous_expires_at?: string | null
+          price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          client_id?: string
+          created_at?: string
+          created_by?: string
+          days?: number
+          id?: string
+          new_expires_at?: string
+          notes?: string | null
+          previous_expires_at?: string | null
+          price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_renewals_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_renewals_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           account_id: string
@@ -73,6 +130,7 @@ export type Database = {
           paid: boolean
           phone: string | null
           price: number | null
+          profile_label: string | null
           sale_date: string
           updated_at: string
           vendor: string | null
@@ -90,6 +148,7 @@ export type Database = {
           paid?: boolean
           phone?: string | null
           price?: number | null
+          profile_label?: string | null
           sale_date?: string
           updated_at?: string
           vendor?: string | null
@@ -107,6 +166,7 @@ export type Database = {
           paid?: boolean
           phone?: string | null
           price?: number | null
+          profile_label?: string | null
           sale_date?: string
           updated_at?: string
           vendor?: string | null

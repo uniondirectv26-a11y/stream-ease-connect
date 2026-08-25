@@ -119,14 +119,51 @@ const PLATFORM_EMOJI: Record<string, string> = {
   Otro: "⚪",
 };
 
-/** Texto listo para copiar/enviar por WhatsApp con los datos de la cuenta. */
-export function buildAccountShareText(account: Account, client?: Client | null): string {
-  const emoji = PLATFORM_EMOJI[account.platform] ?? "⚪";
-  const lines = [`*${emoji}${account.platform} servicio*`];
-  if (account.email) lines.push(`✉️${account.email}`);
-  if (account.password) lines.push(`🔑${account.password}`);
-  lines.push(`🖥️${client?.name ? ` ${client.name}` : ""}`);
+export function platformEmoji(platform: string): string {
+  return PLATFORM_EMOJI[platform] ?? "⚪";
+}
+
+/** Etiqueta del perfil de un cliente ("Perfil 2", "Extra 1", etc.). */
+export function profileLabelOf(client: Client, index?: number): string {
+  const raw = (client.profile_label ?? "").trim();
+  if (raw) return /^\d+$/.test(raw) ? `Perfil ${raw}` : raw;
+  if (index !== undefined) return client.is_extra ? `Extra ${index + 1}` : `Perfil ${index + 1}`;
+  return client.is_extra ? "Extra" : "Perfil";
+}
+
+/**
+ * Texto listo para copiar/enviar por WhatsApp con los datos de la cuenta.
+ * Solo incluye datos de la cuenta indicada y, opcionalmente, del cliente indicado.
+ */
+export function buildAccountShareText(
+  account: Account,
+  client?: Client | null,
+  options?: { profileIndex?: number | undefined },
+): string {
+  const lines = [`*${platformEmoji(account.platform)} ${account.platform} servicio*`];
+  if (account.email) lines.push(`✉️ ${account.email}`);
+  if (account.password) lines.push(`🔑 ${account.password}`);
+
+  if (client && client.account_id === account.id) {
+    const perfil = profileLabelOf(client, options?.profileIndex);
+    lines.push(`🖥️ ${perfil}${client.is_extra ? " (usuario extra)" : ""}`);
+    lines.push(`📅 Vence: ${formatDate(client.expires_at)}`);
+  } else {
+    lines.push("🖥️");
+    if (account.expires_at) lines.push(`📅 Vence: ${formatDate(account.expires_at)}`);
+  }
+
   lines.push("");
   lines.push("👆");
   return lines.join("\n");
+}
+
+/** Normaliza texto para búsquedas: sin tildes, minúsculas y sin espacios extra. */
+export function normalizeSearch(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
 }

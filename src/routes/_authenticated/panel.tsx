@@ -16,6 +16,7 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Eye,
   Send,
   Trash2,
   Tv,
@@ -35,6 +36,8 @@ import {
   formatDate,
   money,
   normalizePhone,
+  normalizeSearch,
+  profileLabelOf,
   statusOf,
   todayISO,
   type Account,
@@ -46,6 +49,8 @@ import {
 import { AccountDialog } from "@/components/AccountDialog";
 import { ClientDialog } from "@/components/ClientDialog";
 import { ExpenseDialog } from "@/components/ExpenseDialog";
+import { ClientSheet } from "@/components/ClientSheet";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -107,6 +112,7 @@ function Panel() {
   const qc = useQueryClient();
 
   const [search, setSearch] = useState("");
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [accountDialog, setAccountDialog] = useState(false);
   const [expenseDialog, setExpenseDialog] = useState(false);
@@ -174,6 +180,7 @@ function Panel() {
   const stats = useMemo(() => {
     let porVencer = 0;
     let vencidos = 0;
+    let activos = 0;
     let pendientes = 0;
     let ingresos = 0;
     const month = todayISO().slice(0, 7);
@@ -181,6 +188,7 @@ function Panel() {
       const s = statusOf(c.expires_at);
       if (s === "por-vencer") porVencer += 1;
       if (s === "vencido") vencidos += 1;
+      if (s === "activo") activos += 1;
       if (!c.paid) pendientes += 1;
       if (c.sale_date.slice(0, 7) === month) ingresos += Number(c.price ?? 0);
     }
@@ -188,7 +196,7 @@ function Panel() {
     for (const e of expenseList) {
       if (e.spent_on.slice(0, 7) === month) invertido += Number(e.amount ?? 0);
     }
-    return { porVencer, vencidos, pendientes, ingresos, invertido, neto: ingresos - invertido };
+    return { activos, porVencer, vencidos, pendientes, ingresos, invertido, neto: ingresos - invertido };
   }, [clientList, expenseList]);
 
   const alerts = useMemo(
@@ -204,15 +212,29 @@ function Panel() {
 
   const renew = useMutation({
     mutationFn: async (client: Client) => {
-      const base = daysLeft(client.expires_at)! < 0 ? todayISO() : client.expires_at;
+      const base = (daysLeft(client.expires_at) ?? 0) < 0 ? todayISO() : client.expires_at;
+      const nuevo = addDaysISO(base, client.days);
       const { error } = await supabase
         .from("clients")
-        .update({ sale_date: todayISO(), expires_at: addDaysISO(base, client.days), paid: true })
+        .update({ sale_date: todayISO(), expires_at: nuevo, paid: true })
         .eq("id", client.id);
       if (error) throw error;
+      const { data: auth } = await supabase.auth.getUser();
+      if (auth.user) {
+        await supabase.from("client_renewals").insert({
+          client_id: client.id,
+          account_id: client.account_id,
+          created_by: auth.user.id,
+          previous_expires_at: client.expires_at,
+          new_expires_at: nuevo,
+          days: client.days,
+          price: client.price,
+        });
+      }
     },
-    onSuccess: () => {
+    onSuccess: (_d, client) => {
       qc.invalidateQueries({ queryKey: ["clients"] });
+      qc.invalidateQueries({ queryKey: ["renewals", client.id] });
       toast.success("Servicio renovado");
     },
     onError: (e: Error) => toast.error("No se pudo renovar", { description: e.message }),
@@ -319,11 +341,31 @@ function Panel() {
     setClientDialog(true);
   };
 
-  const q = search.trim().toLowerCase();
-  const searchResults = useMemo(
-    () => (q ? clientList.filter((c) => c.name.toLowerCase().includes(q) || (c.phone ?? "").includes(q)) : []),
-    [clientList, q],
-  );
+  const debouncedSearch = useDebouncedValue(search, 200);
+  const q = normalizeSearch(debouncedSearch);
+  const searchResults = useMemo(() => {
+    if (!q) return [];
+    return clientList.filter((c) => {
+      const account = accountList.find((a) => a.id === c.account_id);
+      const haystack = normalizeSearch(
+        [
+          c.name,
+          c.phone ?? "",
+          normalizePhone(c.phone),
+          c.profile_label ?? "",
+          profileLabelOf(c),
+          c.vendor ?? "",
+          c.notes ?? "",
+          account?.platform ?? "",
+          account?.label ?? "",
+          account?.email ?? "",
+          account?.id ?? "",
+          c.is_extra ? "extra" : "normal",
+        ].join(" "),
+      );
+      return q.split(" ").every((token) => haystack.includes(token));
+    });
+  }, [clientList, accountList, q]);
 
   return (
     <div className="min-h-screen bg-background">

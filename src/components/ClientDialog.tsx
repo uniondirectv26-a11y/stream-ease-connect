@@ -38,6 +38,8 @@ export function ClientDialog({ open, onOpenChange, accountId, client, defaultVen
   const [price, setPrice] = useState("");
   const [vendor, setVendor] = useState("");
   const [isExtra, setIsExtra] = useState(false);
+  const [profileLabel, setProfileLabel] = useState("");
+  const [notes, setNotes] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -50,6 +52,8 @@ export function ClientDialog({ open, onOpenChange, accountId, client, defaultVen
     setPrice(client?.price !== null && client?.price !== undefined ? String(client.price) : "");
     setVendor(client?.vendor ?? defaultVendor);
     setIsExtra(client?.is_extra ?? defaultExtra ?? false);
+    setProfileLabel(client?.profile_label ?? "");
+    setNotes(client?.notes ?? "");
   }, [open, client, defaultVendor, defaultExtra]);
 
   const recalc = (nextSale: string, nextDays: string) => {
@@ -62,6 +66,7 @@ export function ClientDialog({ open, onOpenChange, accountId, client, defaultVen
       const { data: auth } = await supabase.auth.getUser();
       const userId = auth.user?.id;
       if (!userId) throw new Error("Sesión no válida");
+      if (!name.trim()) throw new Error("El nombre del cliente es obligatorio");
       const payload = {
         account_id: accountId,
         name: name.trim(),
@@ -73,6 +78,8 @@ export function ClientDialog({ open, onOpenChange, accountId, client, defaultVen
         price: price.trim() === "" ? null : Number(price),
         vendor: vendor.trim() || null,
         is_extra: isExtra,
+        profile_label: profileLabel.trim() || null,
+        notes: notes.trim() || null,
         created_by: userId,
       };
       if (client) {
@@ -194,6 +201,31 @@ export function ClientDialog({ open, onOpenChange, accountId, client, defaultVen
               />
             </div>
           </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="cli-profile">Perfil (nombre o número)</Label>
+              <Input
+                id="cli-profile"
+                maxLength={40}
+                value={profileLabel}
+                onChange={(e) => setProfileLabel(e.target.value)}
+                placeholder="2 o Perfil Stefany"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cli-notes">Notas</Label>
+              <Input
+                id="cli-notes"
+                maxLength={300}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="PIN, observaciones…"
+              />
+            </div>
+          </div>
+
+
 
           <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-secondary/40 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center justify-between gap-3 sm:justify-start">
