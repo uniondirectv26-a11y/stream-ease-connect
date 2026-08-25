@@ -202,6 +202,31 @@ export function ClientDialog({ open, onOpenChange, accountId, client, defaultVen
             </div>
           </div>
 
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="cli-profile">Perfil (nombre o número)</Label>
+              <Input
+                id="cli-profile"
+                maxLength={40}
+                value={profileLabel}
+                onChange={(e) => setProfileLabel(e.target.value)}
+                placeholder="2 o Perfil Stefany"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cli-notes">Notas</Label>
+              <Input
+                id="cli-notes"
+                maxLength={300}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="PIN, observaciones…"
+              />
+            </div>
+          </div>
+
+
+
           <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-secondary/40 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center justify-between gap-3 sm:justify-start">
               <Label htmlFor="cli-paid">Pagó</Label>
