@@ -1,4 +1,3 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -190,13 +189,14 @@ function Panel() {
       if (s === "vencido") vencidos += 1;
       if (s === "activo") activos += 1;
       if (!c.paid) pendientes += 1;
-      if (c.sale_date.slice(0, 7) === month) ingresos += Number(c.price ?? 0);
+      if (c.sale_date.slice(0, 7) === month && c.paid) ingresos += Number(c.price ?? 0);
     }
     let invertido = 0;
     for (const e of expenseList) {
       if (e.spent_on.slice(0, 7) === month) invertido += Number(e.amount ?? 0);
     }
-    return { activos, porVencer, vencidos, pendientes, ingresos, invertido, neto: ingresos - invertido };
+    const disponible = ingresos - invertido;
+    return { activos, porVencer, vencidos, pendientes, ingresos, invertido, disponible, neto: disponible };
   }, [clientList, expenseList]);
 
   const alerts = useMemo(
@@ -394,7 +394,7 @@ function Panel() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar cliente por nombre o WhatsApp…"
+              placeholder="Buscar cliente, WhatsApp, correo, cuenta, servicio o perfil…"
               className="pl-9"
               aria-label="Buscar clientes"
             />
@@ -456,6 +456,63 @@ function Panel() {
           )}
         </section>
 
+        <section className="relative overflow-hidden rounded-3xl border border-border/60 bg-card p-5 shadow-sm sm:p-6">
+          <div className="pointer-events-none absolute -right-16 -top-20 size-48 rounded-full bg-primary/10 blur-3xl" />
+          <div className="relative grid gap-5 lg:grid-cols-[1.35fr_.65fr] lg:items-center">
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary">
+                  Panel de control
+                </Badge>
+                <span className="text-xs text-muted-foreground">{todayISO()}</span>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Todo tu negocio de streaming, en un solo lugar.</h1>
+                <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                  Consulta clientes, controla perfiles, revisa vencimientos y conoce cuánto dinero tienes disponible.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                <Button onClick={() => { setEditingClient(null); setClientAccountId(""); setClientExtra(false); setClientDialog(true); }}>
+                  <Plus className="size-4" /> Cliente
+                </Button>
+                <Button variant="secondary" onClick={() => { setEditingAccount(null); setAccountDialog(true); }}>
+                  <Tv className="size-4" /> Cuenta
+                </Button>
+                <Button variant="outline" onClick={() => { setEditingExpense(null); setExpenseDialog(true); }}>
+                  <Wallet className="size-4" /> Inversión
+                </Button>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-border/60 bg-secondary/40 p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-muted-foreground">Disponible este mes</p>
+                <Wallet className="size-4 text-primary" />
+              </div>
+              <p className={`mt-2 text-3xl font-bold tracking-tight ${stats.neto < 0 ? "text-destructive" : "text-success"}`}>
+                {money(stats.neto)}
+              </p>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                <div className="rounded-xl bg-background/70 p-2">
+                  <p className="text-muted-foreground">Ingresado</p>
+                  <p className="mt-0.5 font-semibold">{money(stats.ingresos)}</p>
+                </div>
+                <div className="rounded-xl bg-background/70 p-2">
+                  <p className="text-muted-foreground">Invertido</p>
+                  <p className="mt-0.5 font-semibold">{money(stats.invertido)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <QuickMetric label="Clientes activos" value={String(stats.activos)} detail="con servicio vigente" />
+          <QuickMetric label="Por vencer" value={String(stats.porVencer)} detail="requieren seguimiento" tone="warning" />
+          <QuickMetric label="Vencidos" value={String(stats.vencidos)} detail="requieren renovación" tone="danger" />
+          <QuickMetric label="Sin pagar" value={String(stats.pendientes)} detail="ventas pendientes" tone="warning" />
+        </section>
+
         <section className="grid grid-cols-2 gap-3 lg:grid-cols-3">
           <StatCard icon={<Users className="size-4" />} label="Clientes" value={String(clientList.length)} />
           <StatCard
@@ -472,7 +529,7 @@ function Panel() {
           />
           <StatCard
             icon={<CircleCheck className="size-4" />}
-            label="Ventas del mes"
+            label="Dinero ingresado del mes"
             value={money(stats.ingresos)}
             tone="text-primary"
           />
@@ -484,7 +541,7 @@ function Panel() {
           />
           <StatCard
             icon={<Wallet className="size-4" />}
-            label="Ganancia neta del mes"
+            label="Dinero disponible"
             value={money(stats.neto)}
             tone={stats.neto < 0 ? "text-destructive" : "text-success"}
           />
@@ -517,7 +574,7 @@ function Panel() {
               <StatCard
                 icon={<CircleCheck className="size-4" />}
 
-                label="Ventas del mes"
+                label="Ventas cobradas del mes"
                 value={money(stats.ingresos)}
                 tone="text-primary"
               />
@@ -529,7 +586,7 @@ function Panel() {
               />
               <StatCard
                 icon={<Wallet className="size-4" />}
-                label="Queda (ventas - inversión)"
+                label="Disponible después de inversión"
                 value={money(stats.neto)}
                 tone={stats.neto < 0 ? "text-destructive" : "text-success"}
               />
@@ -688,7 +745,10 @@ function Panel() {
                             )}
                             {account.change_date && <span>Cambio: {formatDate(account.change_date)}</span>}
                             <span>
-                              Cupos: {normales.length}/{account.max_profiles}
+                              Normales: {normales.length}/5
+                            </span>
+                            <span>
+                              Extras: {extras.length}/2
                             </span>
                           </div>
                         </div>
@@ -878,6 +938,27 @@ function Panel() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+function QuickMetric({
+  label,
+  value,
+  detail,
+  tone = "default",
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  tone?: "default" | "warning" | "danger";
+}) {
+  const toneClass = tone === "danger" ? "text-destructive" : tone === "warning" ? "text-warning" : "text-foreground";
+  return (
+    <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
+      <p className="truncate text-xs font-medium text-muted-foreground">{label}</p>
+      <p className={`mt-1 text-2xl font-bold ${toneClass}`}>{value}</p>
+      <p className="mt-1 truncate text-[11px] text-muted-foreground">{detail}</p>
     </div>
   );
 }
